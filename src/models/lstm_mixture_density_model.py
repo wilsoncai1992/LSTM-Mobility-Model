@@ -515,7 +515,8 @@ class tf_lstm_mixture_density_model:
             rand_ind = np.random.choice(
                 X_init.shape[0], self.batch_size, replace=False)
 
-            st_sample = start_time_list[rand_ind] + \
+            # st_sample = start_time_list[rand_ind] + \
+            st_sample = start_time_list[rand_ind[0]] + \
                 np.random.randn(self.batch_size).reshape(
                     self.batch_size, 1) * self.start_time_sd
 
