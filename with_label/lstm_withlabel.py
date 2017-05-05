@@ -1,5 +1,5 @@
-# CUDA_VISIBLE_DEVICES=0 ipython2
 # export MPLBACKEND="agg"
+# CUDA_VISIBLE_DEVICES=0 ipython2
 
 import os
 import sys
@@ -18,14 +18,16 @@ model_name = 'my_lstm_model'
 
 # input_length = 5
 input_length = 50
-# n_lstm_units = 32
-n_lstm_units = 256
+n_lstm_units = 32
+# n_lstm_units = 256
 n_layers = 1
 # pred_x_dim = 4
 # obs_x_dim = 5
 pred_x_dim = 4
-obs_x_dim = 4
-n_mixtures = 3
+obs_x_dim = 5; use_feature = False # for label only
+# obs_x_dim = 4 + 64; use_feature = True # for all features
+# n_mixtures = 3
+n_mixtures = 7
 dropout_prob = 0.1
 # y_dim = 8
 y_dim = 55
@@ -53,7 +55,25 @@ with tf.device('/gpu:0'):
 # =======================================================================================
 import pandas as pd
 
-data_raw = pd.read_csv('./data_new/Traj_Label_Data2.csv')
+# data with label
+Label = pd.read_csv('../data_new/Traj_Label_Data2.csv', index_col=[0]).reset_index()
+colnames = ['Idx','TrueLabel','PredLabel1','PredLabel2','PredLabel3'] + ['Feature' + str(i) for i in range(1,65)]
+Feature = pd.read_csv('../data_cnnout/PredictedLabelFeature.csv', names=colnames)
+New_Label = Label.merge(Feature, left_on='index', right_on='Idx', how='left')
+FID_with_missing_data = New_Label.loc[New_Label['PredLabel1'].index[New_Label['PredLabel1'].apply(np.isnan)]].FID.unique()
+data_raw_withfeature = New_Label[~New_Label.FID.isin(FID_with_missing_data)]
+
+data_raw = data_raw_withfeature
+
+# data with true label
+# Label = pd.read_csv('../data_new/Traj_Label_Data2.csv', index_col=[0]).reset_index()
+# colnames = ['Idx','TrueLabel','PredLabel1','PredLabel2','PredLabel3'] + ['Feature' + str(i) for i in range(1,65)]
+# Feature = pd.read_csv('../data_cnnout/PredictedLabelFeature.csv', names=colnames)
+# data_raw_new = Label.merge(Feature, left_on='index', right_on='Idx')
+
+# no label
+# data_raw = pd.read_csv('../data_new/Traj_Label_Data2.csv')
+
 n_subj = len(np.unique(data_raw['FID']))
 
 location_list = data_raw[['Lon','Lat']].as_matrix()
@@ -127,6 +147,31 @@ contextual_variables1 = np.hstack((np.array([home_location_list1] * activity_inf
 contextual_variables1 = contextual_variables1[np.newaxis, :]
 contextual_variables1 = np.tile(contextual_variables1, (n_subj, 1, 1))
 
+#
+# use true label
+# ---------------------------------------------------------------------------------------
+# label_list = data_raw[['NewLabel']].as_matrix()
+# label_list = np.reshape(label_list, [n_subj, 50])
+# label_list = label_list[:, :, np.newaxis]
+# label_list.shape
+
+# contextual_variables1 = np.concatenate((contextual_variables1, label_list), axis = 2)
+#
+# use CNN feature
+# ---------------------------------------------------------------------------------------
+# feature_list = data_raw_withfeature.as_matrix()[:,14:]
+# feature_list = np.reshape(feature_list, [n_subj, 50, 64])
+
+# contextual_variables1 = np.concatenate((contextual_variables1, feature_list), axis = 2)
+#
+# use predicted label
+# ---------------------------------------------------------------------------------------
+feature_list = data_raw_withfeature.as_matrix()[:,10]
+feature_list = np.reshape(feature_list, [n_subj, 50, 1])
+
+contextual_variables1 = np.concatenate((contextual_variables1, feature_list), axis = 2)
+contextual_variables1.shape
+
 # Initilization for LSTM model
 X_init = np.zeros((1, pred_x_dim))
 X_init = np.tile(X_init, (n_subj, 1))
@@ -166,10 +211,34 @@ activity_information1 /= temp
 #                                   1.,
 #                                   1.])
 
-contextual_variables1 /= np.array([lat_max,
-                                  lon_max,
-                                  lat_max,
-                                  lon_max])
+# no label
+# contextual_variables1 /= np.array([lat_max,
+#                                   lon_max,
+#                                   lat_max,
+#                                   lon_max])
+
+# for label only
+if not use_feature:
+  contextual_variables1 /= np.array([lat_max,
+                                    lon_max,
+                                    lat_max,
+                                    lon_max,
+                                    1])
+
+# for all features
+if use_feature:
+  part1 = [lat_max,
+          lon_max,
+          lat_max,
+          lon_max]
+  to_divide = np.concatenate((part1, np.ones(64)))
+  contextual_variables1 /= to_divide
+
+
+# contextual_variables1 /= np.array([lat_max,
+#                                   lon_max,
+#                                   lat_max,
+#                                   lon_max])
 
 # =======================================================================================
 # artificial eg.
@@ -296,8 +365,11 @@ gen_states, \
 gen_mixture_coef = lstm_DM.generate_sequence_coefficients(sess=sess,
                                                           X_init=X_init,
                                                           X_input_seq=contextual_variables1,
+                                                          # X_init=X_init[0,:],
+                                                          # X_input_seq=contextual_variables1[0,:,:],
                                                           start_time_list=start_time_list1[:,0,:]/24.,
                                                           n=200)
+contextual_variables1[0,:,:].shape
 # =======================================================================================
 # plot sequence
 # =======================================================================================
@@ -352,14 +424,16 @@ plt.ylim((0, 24))
 
 plt.savefig('2.png')
 
+#
 # plot path for single person
+# ---------------------------------------------------------------------------------------
 plt.figure()
 
-i = 1500
+i = 75
 plt.plot(gen_seq[i][:,1], gen_seq[i][:,0], 'b-o', alpha =0.3)
 
 # red center is truth coordinate
-plt.plot(activity_information1[0][:,1], activity_information1[0][:,0], 'ro', lw=3)
+plt.plot(activity_information1[i][:,1], activity_information1[i][:,0], 'ro', lw=3)
 
 plt.xlabel('Longitude')
 plt.ylabel('Latitude')
@@ -377,7 +451,9 @@ plt.figure()
 plt.plot(gen_colmean[:,1], gen_colmean[:,0], 'b-o', alpha =0.3)
 
 # red center is truth coordinate
-plt.plot(activity_information1[0][:,1], activity_information1[0][:,0], 'ro', lw=3)
+mean_play = np.mean(activity_information1, axis=0)
+# plt.plot(activity_information1[0][:,1], activity_information1[0][:,0], 'ro', lw=3)
+plt.plot(mean_play[:,1], mean_play[:,0], 'ro', lw=3)
 
 plt.xlabel('Longitude')
 plt.ylabel('Latitude')
@@ -395,12 +471,29 @@ plt.figure()
 plt.plot(gen_colmedian[:,1], gen_colmedian[:,0], 'b-o', alpha =0.3)
 
 # red center is truth coordinate
-plt.plot(activity_information1[10][:,1], activity_information1[10][:,0], 'ro', lw=3)
+median_play = np.median(activity_information1, axis=0)
+plt.plot(median_play[:,1], median_play[:,0], 'ro', lw=3)
+# plt.plot(activity_information1[10][:,1], activity_information1[10][:,0], 'ro', lw=3)
+
 
 plt.xlabel('Longitude')
 plt.ylabel('Latitude')
 
 plt.savefig('5.png')
 
+#
+# mean path for single person
+# ---------------------------------------------------------------------------------------
 
+
+gen_seq, \
+gen_coef, \
+gen_states, \
+gen_mixture_coef = lstm_DM.generate_sequence_coefficients(sess=sess,
+                                                          X_init=X_init,
+                                                          X_input_seq=contextual_variables1,
+                                                          # X_init=X_init[0,:],
+                                                          # X_input_seq=contextual_variables1[0,:,:],
+                                                          start_time_list=start_time_list1[:,0,:]/24.,
+                                                          n=200)
 
