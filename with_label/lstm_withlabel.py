@@ -175,6 +175,9 @@ contextual_variables1 = np.concatenate((contextual_variables1, label_list), axis
 # Initilization for LSTM model
 X_init = np.zeros((1, pred_x_dim))
 X_init = np.tile(X_init, (n_subj, 1))
+
+
+# activity_information1[0,:,:]
 # =======================================================================================
 # normalize data
 # =======================================================================================
@@ -368,7 +371,8 @@ saver = tf.train.Saver()
 sess = tf.Session(config = config)
 sess.run(tf.global_variables_initializer())
 # Restore variables from disk.
-saver.restore(sess, "./model_save2/model.ckpt")
+saver.restore(sess, "./model_save/model.ckpt")
+# saver.restore(sess, "./model_save2/model.ckpt")
 print("Model restored.")
 
 
@@ -497,18 +501,49 @@ plt.savefig('5.png')
 #
 # mean path for single person
 # ---------------------------------------------------------------------------------------
+i = 25
+
 contextual_variables2 = contextual_variables1[i,:,:][np.newaxis,:,:]
-# contextual_variables2 = np.tile(contextual_variables2, n_subj)
-# contextual_variables2.shape
+contextual_variables2 = np.repeat(contextual_variables2, n_subj, axis = 0)
+contextual_variables2.shape
 
 gen_seq, \
 gen_coef, \
 gen_states, \
 gen_mixture_coef = lstm_DM.generate_sequence_coefficients(sess=sess,
                                                           X_init=X_init,
-                                                          X_input_seq=,
-                                                          # X_init=X_init[0,:],
-                                                          # X_input_seq=contextual_variables1[0,:,:],
+                                                          X_input_seq=contextual_variables2,
                                                           start_time_list=start_time_list1[:,0,:]/24.,
                                                           n=200)
 
+gen_colmean = gen_seq.mean(axis=0)
+
+# plot mean path
+plt.figure()
+
+plt.plot(gen_colmean[:,1], gen_colmean[:,0], 'b-o', alpha =0.3)
+
+# red center is truth coordinate
+plt.plot(activity_information1[i][:,1], activity_information1[i][:,0], 'ro', lw=3)
+
+plt.xlabel('Longitude')
+plt.ylabel('Latitude')
+
+plt.savefig('6.png')
+
+
+gen_colmedian = np.median(gen_seq, axis=0)
+
+# plot mean path
+plt.figure()
+
+plt.plot(gen_colmedian[:,1], gen_colmedian[:,0], 'b-o', alpha =0.3)
+
+# red center is truth coordinate
+plt.plot(activity_information1[i][:,1], activity_information1[i][:,0], 'ro', lw=3)
+
+
+plt.xlabel('Longitude')
+plt.ylabel('Latitude')
+
+plt.savefig('7.png')
