@@ -1,5 +1,5 @@
 # export MPLBACKEND="agg"
-# CUDA_VISIBLE_DEVICES=0 ipython2
+# CUDA_VISIBLE_DEVICES=1 ipython2
 
 import os
 import sys
@@ -62,6 +62,7 @@ Feature = pd.read_csv('../data_cnnout/PredictedLabelFeature.csv', names=colnames
 New_Label = Label.merge(Feature, left_on='index', right_on='Idx', how='left')
 FID_with_missing_data = New_Label.loc[New_Label['PredLabel1'].index[New_Label['PredLabel1'].apply(np.isnan)]].FID.unique()
 data_raw_withfeature = New_Label[~New_Label.FID.isin(FID_with_missing_data)]
+# np.unique(New_Label.FID[New_Label.FID.isin(FID_with_missing_data)])
 
 data_raw = data_raw_withfeature
 
@@ -150,12 +151,12 @@ contextual_variables1 = np.tile(contextual_variables1, (n_subj, 1, 1))
 #
 # use true label
 # ---------------------------------------------------------------------------------------
-# label_list = data_raw[['NewLabel']].as_matrix()
-# label_list = np.reshape(label_list, [n_subj, 50])
-# label_list = label_list[:, :, np.newaxis]
-# label_list.shape
+label_list = data_raw[['NewLabel']].as_matrix()
+label_list = np.reshape(label_list, [n_subj, 50])
+label_list = label_list[:, :, np.newaxis]
+label_list.shape
 
-# contextual_variables1 = np.concatenate((contextual_variables1, label_list), axis = 2)
+contextual_variables1 = np.concatenate((contextual_variables1, label_list), axis = 2)
 #
 # use CNN feature
 # ---------------------------------------------------------------------------------------
@@ -166,11 +167,10 @@ contextual_variables1 = np.tile(contextual_variables1, (n_subj, 1, 1))
 #
 # use predicted label
 # ---------------------------------------------------------------------------------------
-feature_list = data_raw_withfeature.as_matrix()[:,10]
-feature_list = np.reshape(feature_list, [n_subj, 50, 1])
+# feature_list = data_raw_withfeature.as_matrix()[:,10]
+# feature_list = np.reshape(feature_list, [n_subj, 50, 1])
 
-contextual_variables1 = np.concatenate((contextual_variables1, feature_list), axis = 2)
-contextual_variables1.shape
+# contextual_variables1 = np.concatenate((contextual_variables1, feature_list), axis = 2)
 
 # Initilization for LSTM model
 X_init = np.zeros((1, pred_x_dim))
@@ -346,7 +346,8 @@ pi_bias = 0.0
 lstm_DM.train(X_init=X_init,
               X_input_seq=contextual_variables1, # c_t
               y=activity_information1, # x_t
-              epochs=1000,
+              # epochs=1000,
+              epochs=5000,
               sess=sess,
               start_time_list=start_time_list1[:,0,:]/24. ,
               per=1000,
@@ -359,6 +360,18 @@ lstm_DM.train(X_init=X_init,
 # =======================================================================================
 # generate sequence
 # =======================================================================================
+# config = tf.ConfigProto(allow_soft_placement = True)
+saver = tf.train.Saver()
+
+# Later, launch the model, use the saver to restore variables from disk, and
+# do some work with the model.
+sess = tf.Session(config = config)
+sess.run(tf.global_variables_initializer())
+# Restore variables from disk.
+saver.restore(sess, "./model_save2/model.ckpt")
+print("Model restored.")
+
+
 gen_seq, \
 gen_coef, \
 gen_states, \
@@ -484,14 +497,16 @@ plt.savefig('5.png')
 #
 # mean path for single person
 # ---------------------------------------------------------------------------------------
-
+contextual_variables2 = contextual_variables1[i,:,:][np.newaxis,:,:]
+# contextual_variables2 = np.tile(contextual_variables2, n_subj)
+# contextual_variables2.shape
 
 gen_seq, \
 gen_coef, \
 gen_states, \
 gen_mixture_coef = lstm_DM.generate_sequence_coefficients(sess=sess,
                                                           X_init=X_init,
-                                                          X_input_seq=contextual_variables1,
+                                                          X_input_seq=,
                                                           # X_init=X_init[0,:],
                                                           # X_input_seq=contextual_variables1[0,:,:],
                                                           start_time_list=start_time_list1[:,0,:]/24.,
