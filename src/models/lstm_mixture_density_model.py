@@ -71,10 +71,17 @@ class tf_lstm_mixture_density_model:
             self.gen_seq, \
             self.states = self.init_model()
 
+        # # WILSON!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # self.coefficients1, \
+        #     self.mixture_coefficients1, \
+        #     self.gen_seq1, \
+        #     self.states1 = self.init_model()
+
         # Sequence start time
         self.start_time_mean = start_time_mean
         self.start_time_sd = start_time_sd
 
+    # def init_model(self, method = 'train'):
     def init_model(self):
         with tf.variable_scope(self.name):
             # First value to get started
@@ -137,6 +144,9 @@ class tf_lstm_mixture_density_model:
 
             # Inputs to LSTM in each interations
             obs = tf.concat(1, [self.X, self.input_X[:, 0, :]])
+            # print obs.get_shape().as_list() # [,9]
+            # print self.input_X[:, 0, :].get_shape().as_list() # [,5] lon lat lon lat label
+
 
             cur_time = str(time.time())
 
@@ -144,12 +154,25 @@ class tf_lstm_mixture_density_model:
                 if time_step > 0:
                     tf.get_variable_scope().reuse_variables()
 
+                # indices = tf.constant([4])
+                # weights_subset = tf.gather(obs, indices)
+                # print tf.shape(weights_subset)
+                # updated_weights_subset = 0*weights_subset
+                # print tf.shape(updated_weights_subset)
+                # obs2 = tf.scatter_update(obs, indices, updated_weights_subset)
+                # print tf.shape(obs2)
 
-                print obs
-                    # WILSON: most
-                    # state: memory is LSTM component
-                    # obs: X
+
+                # print tf.shape(obs[4])
+                # print obs.eval()
+                # obs2 = tf.scatter_update(obs, [4], [9999])
+
+                # WILSON: most
+                # state: memory is LSTM component
+                # obs: X
+                # print obs.get_shape().as_list() # [none/16,9]
                 (score, state) = cell(obs, state)
+                # (score, state) = cell(obs2, state)
 
                 # Score from affine
                 score = tf.matmul(score, W1) + b1
@@ -161,6 +184,50 @@ class tf_lstm_mixture_density_model:
                                                                time_step)
                 obs = tf.concat(
                     1, [obs_pred, self.input_X[:, time_step, :]])
+                #
+                # ---------------------------------------------------------------------------------------
+                # YULIN !!!!!!!!!!!!!!!!!!!!!!
+                # if:
+                #   call f1(obs_pred)
+                # else:
+                # call f2
+                # ---------------------------------------------------------------------------------------
+                # sess2 = tf.InteractiveSession()
+                # to_yulin = obs_pred.eval()
+                # print to_yulin
+
+                #
+                # ---------------------------------------------------------------------------------------
+                # yo = self.input_X[:, time_step, :]
+                # firstfour = tf.slice(yo, [0,0], [-1,4])
+
+                # shapehere = firstfour.get_shape().as_list()[0]
+                # if shapehere is None:
+                #   shapehere = 1
+                # to_insert = tf.tile(tf.reshape([9999.0], (-1, 1)), [shapehere, 1])
+                # # to_insert = tf.reshape(to_insert, [tf.shape(firstfour)[0], 1])
+                # # print to_insert.get_shape().as_list() # [16,5]
+
+                # if to_insert.get_shape().as_list()[0] != obs_pred.get_shape().as_list()[0]:
+                #   # print 'make longer...'
+                #   to_insert = tf.tile(to_insert, [self.batch_size, 1])
+
+                # yo = tf.concat(1, [firstfour, to_insert])
+                # if yo.get_shape().as_list()[0] != obs_pred.get_shape().as_list()[0]:
+                #   # print 'make longer'
+                #   yo = tf.tile(yo, [self.batch_size, 1])
+
+                # # print yo.get_shape().as_list() # [16,5]
+                # # print obs_pred.get_shape().as_list() # [16,4]
+
+                # # yo[4] = 999
+                # obs = tf.concat(
+                #     1, [obs_pred, yo])
+
+                # # print obs.get_shape().as_list() # [16,9]
+                #
+                # ---------------------------------------------------------------------------------------
+
 
                 # Collect scores and generated_sequences
                 coefficients.append(coef)
@@ -287,6 +354,8 @@ class tf_lstm_mixture_density_model:
               location_sd_bias=0.0,
               time_sd_bias=0.0,
               pi_bias=0.0):
+        # WILSON save model
+        saver = tf.train.Saver()
 
         total_loss = 0
         for e in xrange(epochs):
@@ -311,6 +380,10 @@ class tf_lstm_mixture_density_model:
             if verbose and e % per == 0:
                 print "Epoch: " + str(e) + " Loss: " + str(total_loss / per)
                 total_loss = 0
+        # WILSON save model
+        # save_path = saver.save(sess, "./model_save/model.ckpt")
+        save_path = saver.save(sess, "./model_save2/model.ckpt")
+        print("Model saved in file: %s" % save_path)
 
     def get_mixture_coef(self, output):
 
