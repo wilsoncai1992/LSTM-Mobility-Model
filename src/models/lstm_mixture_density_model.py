@@ -133,6 +133,8 @@ class tf_lstm_mixture_density_model:
             # States of LSTM in each interations
             state = _initial_state
 
+            # WILSON: change the input???????????????????
+
             # Inputs to LSTM in each interations
             obs = tf.concat(1, [self.X, self.input_X[:, 0, :]])
 
@@ -142,10 +144,17 @@ class tf_lstm_mixture_density_model:
                 if time_step > 0:
                     tf.get_variable_scope().reuse_variables()
 
+
+                print obs
+                    # WILSON: most
+                    # state: memory is LSTM component
+                    # obs: X
                 (score, state) = cell(obs, state)
 
                 # Score from affine
                 score = tf.matmul(score, W1) + b1
+
+                # WILSON: scale parameter + sample points
 
                 # Sample next point and cat with other input
                 obs_pred, coef, mixture_coef = self.sample_obs(score,

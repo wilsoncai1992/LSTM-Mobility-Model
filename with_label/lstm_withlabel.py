@@ -69,7 +69,7 @@ data_raw = data_raw_withfeature
 # Label = pd.read_csv('../data_new/Traj_Label_Data2.csv', index_col=[0]).reset_index()
 # colnames = ['Idx','TrueLabel','PredLabel1','PredLabel2','PredLabel3'] + ['Feature' + str(i) for i in range(1,65)]
 # Feature = pd.read_csv('../data_cnnout/PredictedLabelFeature.csv', names=colnames)
-# data_raw_new = Label.merge(Feature, left_on='index', right_on='Idx')
+# data_raw = Label.merge(Feature, left_on='index', right_on='Idx')
 
 # no label
 # data_raw = pd.read_csv('../data_new/Traj_Label_Data2.csv')
@@ -346,7 +346,7 @@ pi_bias = 0.0
 lstm_DM.train(X_init=X_init,
               X_input_seq=contextual_variables1, # c_t
               y=activity_information1, # x_t
-              epochs=5000,
+              epochs=1000,
               sess=sess,
               start_time_list=start_time_list1[:,0,:]/24. ,
               per=1000,
