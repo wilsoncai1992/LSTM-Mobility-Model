@@ -367,8 +367,8 @@ saver = tf.train.Saver()
 sess = tf.Session(config = config)
 sess.run(tf.global_variables_initializer())
 # Restore variables from disk.
-saver.restore(sess, "./model_save/model.ckpt")
-# saver.restore(sess, "./model_save2/model.ckpt")
+saver.restore(sess, "./model_save/model4999.ckpt")
+# saver.restore(sess, "./model_save2/model4999.ckpt")
 print("Model restored.")
 
 gen_seq, \
@@ -570,7 +570,7 @@ contextual_variables3 = np.concatenate((contextual_variables3, all_pred_label), 
 # data_raw[['PredLabel1']]
 
 # ---------------------------------------------------------------------------------------
-
+n_test = len(Label2['FID'].unique())
 
 def simu_plot_test_set(i):
   contextual_variables4 = contextual_variables3[i,:,:][np.newaxis,:,:]
@@ -610,7 +610,7 @@ def simu_plot_test_set(i):
   plt.ylabel('Longitude')
   plt.xlabel('Latitude')
 
-  plt.savefig(str(i) + '-6.png')
+  plt.savefig('test-'+ str(i) + '-6.png')
 
 
   gen_colmedian = np.median(gen_seq, axis=0)
@@ -629,10 +629,9 @@ def simu_plot_test_set(i):
   plt.ylabel('Longitude')
   plt.xlabel('Latitude')
 
-  plt.savefig(+ str) +'-7.png')
+  plt.savefig('test-'+ str(i) +'-7.png')
 # ---------------------------------------------------------------------------------------
 simu_plot_test_set(i = 18)
 
-
-for it in xrange(10):
-  pass
+for it in xrange(n_test):
+  simu_plot_test_set(i = it)

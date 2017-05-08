@@ -369,8 +369,8 @@ saver = tf.train.Saver()
 sess = tf.Session(config = config)
 sess.run(tf.global_variables_initializer())
 # Restore variables from disk.
-# saver.restore(sess, "./model_save/model.ckpt")
-saver.restore(sess, "./model_save2/model.ckpt")
+# saver.restore(sess, "./model_save/model4999.ckpt")
+saver.restore(sess, "./model_save2/model4999.ckpt")
 print("Model restored.")
 
 gen_seq, \
@@ -412,13 +412,13 @@ gen_seq[:, :, 3] *= 24
 plt.figure()
 
 for i in xrange(200):
-    plt.plot(gen_seq[i][:,1], gen_seq[i][:,0], 'b.', alpha =0.3)
+    plt.plot(gen_seq[i][:,0], gen_seq[i][:,1] , 'b.', alpha =0.3)
 
 # red center is truth coordinate
-plt.plot(activity_information1[0][:,1], activity_information1[0][:,0], 'ro', lw=3)
+plt.plot(activity_information1[0][:,0], activity_information1[0][:,1], 'ro', lw=3)
 
-plt.xlabel('Longitude')
-plt.ylabel('Latitude')
+plt.ylabel('Longitude')
+plt.xlabel('Latitude')
 plt.savefig('1.png')
 #
 # plot duration
@@ -426,15 +426,15 @@ plt.savefig('1.png')
 plt.figure()
 
 for i in xrange(200):
-    plt.plot(gen_seq[i][:,2], gen_seq[i][:,3], 'b.', alpha =0.3)
+    plt.plot(gen_seq[i][:,3], gen_seq[i][:,2], 'b.', alpha =0.3)
 
-plt.plot(activity_information1[0][:,2], activity_information1[0][:,3], 'ro', lw=3)
+plt.plot(activity_information1[0][:,3], activity_information1[0][:,2], 'ro', lw=3)
 
 
-plt.xlabel('Starting Time')
-plt.ylabel('Duration')
-plt.xlim((0, 24))
+plt.ylabel('Starting Time')
+plt.xlabel('Duration')
 plt.ylim((0, 24))
+plt.xlim((0, 24))
 
 plt.savefig('2.png')
 
@@ -444,13 +444,13 @@ plt.savefig('2.png')
 plt.figure()
 
 i = 175
-plt.plot(gen_seq[i][:,1], gen_seq[i][:,0], 'b-o', alpha =0.3)
+plt.plot(gen_seq[i][:,0], gen_seq[i][:,1], 'b-o', alpha =0.3)
 
 # red center is truth coordinate
-plt.plot(activity_information1[i][:,1], activity_information1[i][:,0], 'ro', lw=3)
+plt.plot(activity_information1[i][:,0], activity_information1[i][:,1], 'ro', lw=3)
 
-plt.xlabel('Longitude')
-plt.ylabel('Latitude')
+plt.ylabel('Longitude')
+plt.xlabel('Latitude')
 
 plt.savefig('3.png')
 
@@ -462,15 +462,15 @@ gen_colmean = gen_seq.mean(axis=0)
 # plot mean path
 plt.figure()
 
-plt.plot(gen_colmean[:,1], gen_colmean[:,0], 'b-o', alpha =0.3)
+plt.plot(gen_colmean[:,0], gen_colmean[:,1], 'b-o', alpha =0.3)
 
 # red center is truth coordinate
 mean_play = np.mean(activity_information1, axis=0)
 # plt.plot(activity_information1[0][:,1], activity_information1[0][:,0], 'ro', lw=3)
-plt.plot(mean_play[:,1], mean_play[:,0], 'ro', lw=3)
+plt.plot(mean_play[:,0], mean_play[:,1], 'ro', lw=3)
 
-plt.xlabel('Longitude')
-plt.ylabel('Latitude')
+plt.ylabel('Longitude')
+plt.xlabel('Latitude')
 
 plt.savefig('4.png')
 
@@ -482,16 +482,16 @@ gen_colmedian = np.median(gen_seq, axis=0)
 # plot mean path
 plt.figure()
 
-plt.plot(gen_colmedian[:,1], gen_colmedian[:,0], 'b-o', alpha =0.3)
+plt.plot(gen_colmedian[:,0], gen_colmedian[:,1], 'b-o', alpha =0.3)
 
 # red center is truth coordinate
 median_play = np.median(activity_information1, axis=0)
-plt.plot(median_play[:,1], median_play[:,0], 'ro', lw=3)
+plt.plot(median_play[:,0], median_play[:,1], 'ro', lw=3)
 # plt.plot(activity_information1[10][:,1], activity_information1[10][:,0], 'ro', lw=3)
 
 
-plt.xlabel('Longitude')
-plt.ylabel('Latitude')
+plt.ylabel('Longitude')
+plt.xlabel('Latitude')
 
 plt.savefig('5.png')
 #
@@ -524,13 +524,13 @@ gen_colmean = gen_seq.mean(axis=0)
 # plot mean path
 plt.figure()
 
-plt.plot(gen_colmean[:,1], gen_colmean[:,0], 'b-o', alpha =0.3)
+plt.plot(gen_colmean[:,0], gen_colmean[:,1], 'b-o', alpha =0.3)
 
 # red center is truth coordinate
-plt.plot(activity_information1[i][:,1], activity_information1[i][:,0], 'ro', lw=3)
+plt.plot(activity_information1[i][:,0], activity_information1[i][:,1], 'ro', lw=3)
 
-plt.xlabel('Longitude')
-plt.ylabel('Latitude')
+plt.ylabel('Longitude')
+plt.xlabel('Latitude')
 
 plt.savefig('6.png')
 
@@ -540,14 +540,14 @@ gen_colmedian = np.median(gen_seq, axis=0)
 # plot mean path
 plt.figure()
 
-plt.plot(gen_colmedian[:,1], gen_colmedian[:,0], 'b-o', alpha =0.3)
+plt.plot(gen_colmedian[:,0], gen_colmedian[:,1], 'b-o', alpha =0.3)
 
 # red center is truth coordinate
-plt.plot(activity_information1[i][:,1], activity_information1[i][:,0], 'ro', lw=3)
+plt.plot(activity_information1[i][:,0], activity_information1[i][:,1], 'ro', lw=3)
 
 
-plt.xlabel('Longitude')
-plt.ylabel('Latitude')
+plt.ylabel('Longitude')
+plt.xlabel('Latitude')
 
 plt.savefig('7.png')
 
@@ -571,8 +571,10 @@ contextual_variables3 = np.concatenate((contextual_variables3, all_pred_label), 
 # data_raw.columns
 # data_raw[['PredLabel1']]
 
-i = 18
+# ---------------------------------------------------------------------------------------
+n_test = len(Label2['FID'].unique())
 
+def simu_plot_test_set(i):
 contextual_variables4 = contextual_variables3[i,:,:][np.newaxis,:,:]
 contextual_variables4 = np.repeat(contextual_variables4, n_subj, axis = 0)
 contextual_variables4.shape
@@ -598,19 +600,19 @@ gen_colmean = gen_seq.mean(axis=0)
 # plot mean path
 plt.figure()
 
-plt.plot(gen_colmean[:,1], gen_colmean[:,0], 'b-o', alpha =0.3)
+  plt.plot(gen_colmean[:,0], gen_colmean[:,1], 'b-o', alpha =0.3)
 
 # red center is truth coordinate
 uniq_FID = np.unique(Label2[['FID']].values)
 
 my_lonlat = Label[Label.FID ==  uniq_FID[i]][['Lon', 'Lat']].values
 # my_lonlat = Label2[Label2.FID == uniq_FID[i]][['Lon', 'Lat']].values
-plt.plot(my_lonlat[:,1], my_lonlat[:,0], 'ro', lw=3)
+  plt.plot(my_lonlat[:,0], my_lonlat[:,1], 'ro', lw=3)
 
-plt.xlabel('Longitude')
-plt.ylabel('Latitude')
+  plt.ylabel('Longitude')
+  plt.xlabel('Latitude')
 
-plt.savefig('6.png')
+  plt.savefig('test-'+ str(i) + '-6.png')
 
 
 gen_colmedian = np.median(gen_seq, axis=0)
@@ -618,15 +620,20 @@ gen_colmedian = np.median(gen_seq, axis=0)
 # plot mean path
 plt.figure()
 
-plt.plot(gen_colmedian[:,1], gen_colmedian[:,0], 'b-o', alpha =0.3)
+  plt.plot(gen_colmedian[:,0], gen_colmedian[:,1], 'b-o', alpha =0.3)
 
 # red center is truth coordinate
 my_lonlat = Label[Label.FID ==  uniq_FID[i]][['Lon', 'Lat']].values
 # my_lonlat = Label2[Label2.FID == uniq_FID[i]][['Lon', 'Lat']].values
-plt.plot(my_lonlat[:,1], my_lonlat[:,0], 'ro', lw=3)
+  plt.plot(my_lonlat[:,0], my_lonlat[:,1], 'ro', lw=3)
 
 
-plt.xlabel('Longitude')
-plt.ylabel('Latitude')
+  plt.ylabel('Longitude')
+  plt.xlabel('Latitude')
 
-plt.savefig('7.png')
+  plt.savefig('test-'+ str(i) +'-7.png')
+# ---------------------------------------------------------------------------------------
+simu_plot_test_set(i = 18)
+
+for it in xrange(n_test):
+  simu_plot_test_set(i = it)
