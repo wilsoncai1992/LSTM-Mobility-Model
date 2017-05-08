@@ -24,8 +24,8 @@ n_layers = 1
 # pred_x_dim = 4
 # obs_x_dim = 5
 pred_x_dim = 4
-# obs_x_dim = 5; use_feature = False # for label only
-obs_x_dim = 4 + 64; use_feature = True # for all features
+obs_x_dim = 5; use_feature = False # for label only
+# obs_x_dim = 4 + 64; use_feature = True # for all features
 # n_mixtures = 3
 n_mixtures = 7
 dropout_prob = 0.1
@@ -150,13 +150,13 @@ contextual_variables1 = np.tile(contextual_variables1, (n_subj, 1, 1))
 #
 # use true label
 # ---------------------------------------------------------------------------------------
-# if not use_feature:
-#   label_list = data_raw[['NewLabel']].as_matrix()
-#   label_list = np.reshape(label_list, [n_subj, 50])
-#   label_list = label_list[:, :, np.newaxis]
-#   label_list.shape
+if not use_feature:
+  label_list = data_raw[['NewLabel']].as_matrix()
+  label_list = np.reshape(label_list, [n_subj, 50])
+  label_list = label_list[:, :, np.newaxis]
+  label_list.shape
 
-#   contextual_variables1 = np.concatenate((contextual_variables1, label_list), axis = 2)
+  contextual_variables1 = np.concatenate((contextual_variables1, label_list), axis = 2)
 #
 # use CNN feature
 # ---------------------------------------------------------------------------------------
