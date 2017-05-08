@@ -28,8 +28,8 @@ pred_x_dim = 4
 obs_x_dim = 4 + 64; use_feature = True # for all features
 # n_mixtures = 3
 n_mixtures = 7
-# dropout_prob = 0.1
-dropout_prob = 0.2
+dropout_prob = 0.1
+# dropout_prob = 0.2
 # y_dim = 8
 y_dim = 55
 # batch_size=1
