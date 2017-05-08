@@ -307,7 +307,7 @@ class tf_lstm_mixture_density_model:
                 total_loss = 0
 
         # WILSON save model
-        save_path = saver.save(sess, "./model_save/model.ckpt")
+        save_path = saver.save(sess, "./model_save/model" + str(e) + ".ckpt")
         # save_path = saver.save(sess, "./model_save2/model.ckpt")
         print("Model saved in file: %s" % save_path)
 
