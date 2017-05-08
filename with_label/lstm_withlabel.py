@@ -56,20 +56,20 @@ with tf.device('/gpu:0'):
 import pandas as pd
 
 # data with feature
-# Label = pd.read_csv('../data_new/Traj_Label_Data2.csv', index_col=[0]).reset_index()
-# colnames = ['Idx','TrueLabel','PredLabel1','PredLabel2','PredLabel3'] + ['Feature' + str(i) for i in range(1,65)]
-# Feature = pd.read_csv('../data_cnnout/PredictedLabelFeature.csv', names=colnames)
-# New_Label = Label.merge(Feature, left_on='index', right_on='Idx', how='left')
-# FID_with_missing_data = New_Label.loc[New_Label['PredLabel1'].index[New_Label['PredLabel1'].apply(np.isnan)]].FID.unique()
-# data_raw_withfeature = New_Label[~New_Label.FID.isin(FID_with_missing_data)]
-
-# data_raw = data_raw_withfeature
-
-# data with true label
 Label = pd.read_csv('../data_new/Traj_Label_Data2.csv', index_col=[0]).reset_index()
 colnames = ['Idx','TrueLabel','PredLabel1','PredLabel2','PredLabel3'] + ['Feature' + str(i) for i in range(1,65)]
 Feature = pd.read_csv('../data_cnnout/PredictedLabelFeature.csv', names=colnames)
-data_raw_new = Label.merge(Feature, left_on='index', right_on='Idx')
+New_Label = Label.merge(Feature, left_on='index', right_on='Idx', how='left')
+FID_with_missing_data = New_Label.loc[New_Label['PredLabel1'].index[New_Label['PredLabel1'].apply(np.isnan)]].FID.unique()
+data_raw_withfeature = New_Label[~New_Label.FID.isin(FID_with_missing_data)]
+
+data_raw = data_raw_withfeature
+
+# data with true label
+# Label = pd.read_csv('../data_new/Traj_Label_Data2.csv', index_col=[0]).reset_index()
+# colnames = ['Idx','TrueLabel','PredLabel1','PredLabel2','PredLabel3'] + ['Feature' + str(i) for i in range(1,65)]
+# Feature = pd.read_csv('../data_cnnout/PredictedLabelFeature.csv', names=colnames)
+# data_raw = Label.merge(Feature, left_on='index', right_on='Idx')
 
 # no label
 # data_raw = pd.read_csv('../data_new/Traj_Label_Data2.csv')
@@ -83,8 +83,6 @@ for it in xrange(0,n_subj):
     # print location_list[(50*it):(50*(it+1)), :].shape
     location_list1[it, :, :] = location_list[(50*it):(50*(it+1)), :]
 # location_list1 = data_raw[['Lon','Lat']].as_matrix()
-
-
 
 start_time_list1 = np.linspace(start = 1, stop = 50, num=50)
 start_time_list1 = start_time_list1[np.newaxis, :, np.newaxis]
@@ -348,7 +346,7 @@ pi_bias = 0.0
 lstm_DM.train(X_init=X_init,
               X_input_seq=contextual_variables1, # c_t
               y=activity_information1, # x_t
-              epochs=3000,
+              epochs=1000,
               sess=sess,
               start_time_list=start_time_list1[:,0,:]/24. ,
               per=1000,
@@ -571,62 +569,70 @@ contextual_variables3 = np.concatenate((contextual_variables3, all_pred_label), 
 # data_raw.columns
 # data_raw[['PredLabel1']]
 
-i = 18
-
-contextual_variables4 = contextual_variables3[i,:,:][np.newaxis,:,:]
-contextual_variables4 = np.repeat(contextual_variables4, n_subj, axis = 0)
-contextual_variables4.shape
-
-gen_seq, \
-gen_coef, \
-gen_states, \
-gen_mixture_coef = lstm_DM.generate_sequence_coefficients(sess=sess,
-                                                          X_init=X_init,
-                                                          X_input_seq=contextual_variables4,
-                                                          start_time_list=start_time_list1[:,0,:]/24.,
-                                                          n=200)
-
-gen_seq[:, :, 0] *= lat_max
-gen_seq[:, :, 1] *= lon_max
-gen_seq[:, :, 0] += lat_mean
-gen_seq[:, :, 1] += lon_mean
-gen_seq[:, :, 2] *= 24
-gen_seq[:, :, 3] *= 24
-
-gen_colmean = gen_seq.mean(axis=0)
-
-# plot mean path
-plt.figure()
-
-plt.plot(gen_colmean[:,0], gen_colmean[:,1], 'b-o', alpha =0.3)
-
-# red center is truth coordinate
-uniq_FID = np.unique(Label2[['FID']].values)
-
-my_lonlat = Label[Label.FID ==  uniq_FID[i]][['Lon', 'Lat']].values
-# my_lonlat = Label2[Label2.FID == uniq_FID[i]][['Lon', 'Lat']].values
-plt.plot(my_lonlat[:,0], my_lonlat[:,1], 'ro', lw=3)
-
-plt.ylabel('Longitude')
-plt.xlabel('Latitude')
-
-plt.savefig('6.png')
+# ---------------------------------------------------------------------------------------
 
 
-gen_colmedian = np.median(gen_seq, axis=0)
+def simu_plot_test_set(i):
+  contextual_variables4 = contextual_variables3[i,:,:][np.newaxis,:,:]
+  contextual_variables4 = np.repeat(contextual_variables4, n_subj, axis = 0)
+  contextual_variables4.shape
 
-# plot mean path
-plt.figure()
+  gen_seq, \
+  gen_coef, \
+  gen_states, \
+  gen_mixture_coef = lstm_DM.generate_sequence_coefficients(sess=sess,
+                                                            X_init=X_init,
+                                                            X_input_seq=contextual_variables4,
+                                                            start_time_list=start_time_list1[:,0,:]/24.,
+                                                            n=200)
 
-plt.plot(gen_colmedian[:,0], gen_colmedian[:,1], 'b-o', alpha =0.3)
+  gen_seq[:, :, 0] *= lat_max
+  gen_seq[:, :, 1] *= lon_max
+  gen_seq[:, :, 0] += lat_mean
+  gen_seq[:, :, 1] += lon_mean
+  gen_seq[:, :, 2] *= 24
+  gen_seq[:, :, 3] *= 24
 
-# red center is truth coordinate
-my_lonlat = Label[Label.FID ==  uniq_FID[i]][['Lon', 'Lat']].values
-# my_lonlat = Label2[Label2.FID == uniq_FID[i]][['Lon', 'Lat']].values
-plt.plot(my_lonlat[:,0], my_lonlat[:,1], 'ro', lw=3)
+  gen_colmean = gen_seq.mean(axis=0)
+
+  # plot mean path
+  plt.figure()
+
+  plt.plot(gen_colmean[:,0], gen_colmean[:,1], 'b-o', alpha =0.3)
+
+  # red center is truth coordinate
+  uniq_FID = np.unique(Label2[['FID']].values)
+
+  my_lonlat = Label[Label.FID ==  uniq_FID[i]][['Lon', 'Lat']].values
+  # my_lonlat = Label2[Label2.FID == uniq_FID[i]][['Lon', 'Lat']].values
+  plt.plot(my_lonlat[:,0], my_lonlat[:,1], 'ro', lw=3)
+
+  plt.ylabel('Longitude')
+  plt.xlabel('Latitude')
+
+  plt.savefig(str(i) + '-6.png')
 
 
-plt.ylabel('Longitude')
-plt.xlabel('Latitude')
+  gen_colmedian = np.median(gen_seq, axis=0)
 
-plt.savefig('7.png')
+  # plot mean path
+  plt.figure()
+
+  plt.plot(gen_colmedian[:,0], gen_colmedian[:,1], 'b-o', alpha =0.3)
+
+  # red center is truth coordinate
+  my_lonlat = Label[Label.FID ==  uniq_FID[i]][['Lon', 'Lat']].values
+  # my_lonlat = Label2[Label2.FID == uniq_FID[i]][['Lon', 'Lat']].values
+  plt.plot(my_lonlat[:,0], my_lonlat[:,1], 'ro', lw=3)
+
+
+  plt.ylabel('Longitude')
+  plt.xlabel('Latitude')
+
+  plt.savefig(+ str) +'-7.png')
+# ---------------------------------------------------------------------------------------
+simu_plot_test_set(i = 18)
+
+
+for it in xrange(10):
+  pass
