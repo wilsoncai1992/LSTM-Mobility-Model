@@ -346,10 +346,10 @@ pi_bias = 0.0
 lstm_DM.train(X_init=X_init,
               X_input_seq=contextual_variables1, # c_t
               y=activity_information1, # x_t
-              epochs=1000,
+              epochs=5000,
               sess=sess,
               start_time_list=start_time_list1[:,0,:]/24. ,
-              per=1000,
+              per=10,
               location_sd_bias=location_sd_bias,
               time_sd_bias=time_sd_bias,
               pi_bias=pi_bias)
@@ -495,11 +495,10 @@ plt.savefig('5.png')
 #
 # mean path for single person
 # ---------------------------------------------------------------------------------------
-i = 500
+i = 100
 
 contextual_variables2 = contextual_variables1[i,:,:][np.newaxis,:,:]
 contextual_variables2 = np.repeat(contextual_variables2, n_subj, axis = 0)
-contextual_variables2.shape
 
 gen_seq, \
 gen_coef, \
@@ -552,7 +551,6 @@ plt.savefig('7.png')
 #
 # predict for test data
 # ---------------------------------------------------------------------------------------
-
 Label2 = pd.read_csv('../data_test/PredFeatureTest_test.csv', index_col=[0]).reset_index()
 Label2.groupby('FID').count()
 
@@ -631,7 +629,8 @@ def simu_plot_test_set(i):
 
   plt.savefig('test-'+ str(i) +'-7.png')
 # ---------------------------------------------------------------------------------------
-simu_plot_test_set(i = 18)
+# simu_plot_test_set(i = 18)
 
 for it in xrange(n_test):
+  print str(it)
   simu_plot_test_set(i = it)

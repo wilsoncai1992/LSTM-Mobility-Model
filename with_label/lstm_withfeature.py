@@ -348,10 +348,10 @@ pi_bias = 0.0
 lstm_DM.train(X_init=X_init,
               X_input_seq=contextual_variables1, # c_t
               y=activity_information1, # x_t
-              epochs=3000,
+              epochs=6000,
               sess=sess,
               start_time_list=start_time_list1[:,0,:]/24. ,
-              per=1000,
+              per=10,
               location_sd_bias=location_sd_bias,
               time_sd_bias=time_sd_bias,
               pi_bias=pi_bias)
@@ -361,7 +361,7 @@ lstm_DM.train(X_init=X_init,
 # =======================================================================================
 # generate sequence
 # =======================================================================================
-# config = tf.ConfigProto(allow_soft_placement = True)
+config = tf.ConfigProto(allow_soft_placement = True)
 saver = tf.train.Saver()
 
 # Later, launch the model, use the saver to restore variables from disk, and
@@ -370,7 +370,7 @@ sess = tf.Session(config = config)
 sess.run(tf.global_variables_initializer())
 # Restore variables from disk.
 # saver.restore(sess, "./model_save/model4999.ckpt")
-saver.restore(sess, "./model_save2/model4999.ckpt")
+saver.restore(sess, "./model_save2/model5999.ckpt")
 print("Model restored.")
 
 gen_seq, \
@@ -497,7 +497,7 @@ plt.savefig('5.png')
 #
 # mean path for single person
 # ---------------------------------------------------------------------------------------
-i = 500
+i = 100
 
 contextual_variables2 = contextual_variables1[i,:,:][np.newaxis,:,:]
 contextual_variables2 = np.repeat(contextual_variables2, n_subj, axis = 0)
@@ -554,13 +554,15 @@ plt.savefig('7.png')
 #
 # predict for test data
 # ---------------------------------------------------------------------------------------
-
 Label2 = pd.read_csv('../data_test/PredFeatureTest_test.csv', index_col=[0]).reset_index()
 Label2.groupby('FID').count()
 
-all_pred_label = Label2[['PredLabel1']]
-all_pred_label = np.reshape(all_pred_label.values, (len(all_pred_label)/50,50))
-all_pred_label = all_pred_label[:,:,np.newaxis]
+
+# all_pred_label = Label2[['PredLabel1']]
+# all_pred_label = np.reshape(all_pred_label.values, (len(all_pred_label)/50,50))
+# all_pred_label = all_pred_label[:,:,np.newaxis]
+all_pred_label = Label2.as_matrix()[:,14:]
+all_pred_label = np.reshape(all_pred_label, (all_pred_label.shape[0]/50,50, 64))
 
 contextual_variables3 = contextual_variables1[i,:,:][np.newaxis,:,:]
 contextual_variables3 = contextual_variables3[:,:,0:4]
@@ -575,38 +577,38 @@ contextual_variables3 = np.concatenate((contextual_variables3, all_pred_label), 
 n_test = len(Label2['FID'].unique())
 
 def simu_plot_test_set(i):
-contextual_variables4 = contextual_variables3[i,:,:][np.newaxis,:,:]
-contextual_variables4 = np.repeat(contextual_variables4, n_subj, axis = 0)
-contextual_variables4.shape
+  contextual_variables4 = contextual_variables3[i,:,:][np.newaxis,:,:]
+  contextual_variables4 = np.repeat(contextual_variables4, n_subj, axis = 0)
+  contextual_variables4.shape
 
-gen_seq, \
-gen_coef, \
-gen_states, \
-gen_mixture_coef = lstm_DM.generate_sequence_coefficients(sess=sess,
-                                                          X_init=X_init,
-                                                          X_input_seq=contextual_variables4,
-                                                          start_time_list=start_time_list1[:,0,:]/24.,
-                                                          n=200)
+  gen_seq, \
+  gen_coef, \
+  gen_states, \
+  gen_mixture_coef = lstm_DM.generate_sequence_coefficients(sess=sess,
+                                                            X_init=X_init,
+                                                            X_input_seq=contextual_variables4,
+                                                            start_time_list=start_time_list1[:,0,:]/24.,
+                                                            n=200)
 
-gen_seq[:, :, 0] *= lat_max
-gen_seq[:, :, 1] *= lon_max
-gen_seq[:, :, 0] += lat_mean
-gen_seq[:, :, 1] += lon_mean
-gen_seq[:, :, 2] *= 24
-gen_seq[:, :, 3] *= 24
+  gen_seq[:, :, 0] *= lat_max
+  gen_seq[:, :, 1] *= lon_max
+  gen_seq[:, :, 0] += lat_mean
+  gen_seq[:, :, 1] += lon_mean
+  gen_seq[:, :, 2] *= 24
+  gen_seq[:, :, 3] *= 24
 
-gen_colmean = gen_seq.mean(axis=0)
+  gen_colmean = gen_seq.mean(axis=0)
 
-# plot mean path
-plt.figure()
+  # plot mean path
+  plt.figure()
 
   plt.plot(gen_colmean[:,0], gen_colmean[:,1], 'b-o', alpha =0.3)
 
-# red center is truth coordinate
-uniq_FID = np.unique(Label2[['FID']].values)
+  # red center is truth coordinate
+  uniq_FID = np.unique(Label2[['FID']].values)
 
-my_lonlat = Label[Label.FID ==  uniq_FID[i]][['Lon', 'Lat']].values
-# my_lonlat = Label2[Label2.FID == uniq_FID[i]][['Lon', 'Lat']].values
+  my_lonlat = Label[Label.FID ==  uniq_FID[i]][['Lon', 'Lat']].values
+  # my_lonlat = Label2[Label2.FID == uniq_FID[i]][['Lon', 'Lat']].values
   plt.plot(my_lonlat[:,0], my_lonlat[:,1], 'ro', lw=3)
 
   plt.ylabel('Longitude')
@@ -615,16 +617,16 @@ my_lonlat = Label[Label.FID ==  uniq_FID[i]][['Lon', 'Lat']].values
   plt.savefig('test-'+ str(i) + '-6.png')
 
 
-gen_colmedian = np.median(gen_seq, axis=0)
+  gen_colmedian = np.median(gen_seq, axis=0)
 
-# plot mean path
-plt.figure()
+  # plot mean path
+  plt.figure()
 
   plt.plot(gen_colmedian[:,0], gen_colmedian[:,1], 'b-o', alpha =0.3)
 
-# red center is truth coordinate
-my_lonlat = Label[Label.FID ==  uniq_FID[i]][['Lon', 'Lat']].values
-# my_lonlat = Label2[Label2.FID == uniq_FID[i]][['Lon', 'Lat']].values
+  # red center is truth coordinate
+  my_lonlat = Label[Label.FID ==  uniq_FID[i]][['Lon', 'Lat']].values
+  # my_lonlat = Label2[Label2.FID == uniq_FID[i]][['Lon', 'Lat']].values
   plt.plot(my_lonlat[:,0], my_lonlat[:,1], 'ro', lw=3)
 
 
@@ -633,7 +635,8 @@ my_lonlat = Label[Label.FID ==  uniq_FID[i]][['Lon', 'Lat']].values
 
   plt.savefig('test-'+ str(i) +'-7.png')
 # ---------------------------------------------------------------------------------------
-simu_plot_test_set(i = 18)
+# simu_plot_test_set(i = 18)
 
 for it in xrange(n_test):
+  print str(it)
   simu_plot_test_set(i = it)
