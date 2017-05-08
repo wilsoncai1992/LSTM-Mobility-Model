@@ -277,7 +277,8 @@ class tf_lstm_mixture_density_model:
               per=100,
               location_sd_bias=0.0,
               time_sd_bias=0.0,
-              pi_bias=0.0):
+              pi_bias=0.0,
+              which_model=1):
 
         # WILSON save model
         saver = tf.train.Saver()
@@ -307,8 +308,10 @@ class tf_lstm_mixture_density_model:
                 total_loss = 0
 
         # WILSON save model
-        save_path = saver.save(sess, "./model_save/model" + str(e) + ".ckpt")
-        # save_path = saver.save(sess, "./model_save2/model.ckpt")
+        if which_model==1:
+          save_path = saver.save(sess, "./model_save/model" + str(e) + ".ckpt")
+        if which_model==2:
+          save_path = saver.save(sess, "./model_save2/model" + str(e) + ".ckpt")
         print("Model saved in file: %s" % save_path)
 
 

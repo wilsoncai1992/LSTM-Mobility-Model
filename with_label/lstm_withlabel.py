@@ -33,7 +33,8 @@ dropout_prob = 0.1
 y_dim = 55
 # batch_size=1
 batch_size=16
-learning_rate = 0.01
+# learning_rate = 0.01
+learning_rate = 0.0001
 start_time_sd = 0.01
 
 # with tf.device('/cpu:0'):
@@ -352,7 +353,8 @@ lstm_DM.train(X_init=X_init,
               per=10,
               location_sd_bias=location_sd_bias,
               time_sd_bias=time_sd_bias,
-              pi_bias=pi_bias)
+              pi_bias=pi_bias,
+              which_model=1)
 
 # ho =start_time_list1[:,0,:]
 # ho=start_time_list1[0,0]
