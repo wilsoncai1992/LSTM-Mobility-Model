@@ -361,6 +361,18 @@ lstm_DM.train(X_init=X_init,
 # =======================================================================================
 # generate sequence
 # =======================================================================================
+# config = tf.ConfigProto(allow_soft_placement = True)
+saver = tf.train.Saver()
+
+# Later, launch the model, use the saver to restore variables from disk, and
+# do some work with the model.
+sess = tf.Session(config = config)
+sess.run(tf.global_variables_initializer())
+# Restore variables from disk.
+saver.restore(sess, "./model_save/model.ckpt")
+# saver.restore(sess, "./model_save2/model.ckpt")
+print("Model restored.")
+
 gen_seq, \
 gen_coef, \
 gen_states, \

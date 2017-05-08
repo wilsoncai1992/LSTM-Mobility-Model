@@ -279,6 +279,9 @@ class tf_lstm_mixture_density_model:
               time_sd_bias=0.0,
               pi_bias=0.0):
 
+        # WILSON save model
+        saver = tf.train.Saver()
+
         total_loss = 0
         for e in xrange(epochs):
             rand_ind = np.random.choice(
@@ -302,6 +305,12 @@ class tf_lstm_mixture_density_model:
             if verbose and e % per == 0:
                 print "Epoch: " + str(e) + " Loss: " + str(total_loss / per)
                 total_loss = 0
+
+        # WILSON save model
+        save_path = saver.save(sess, "./model_save/model.ckpt")
+        # save_path = saver.save(sess, "./model_save2/model.ckpt")
+        print("Model saved in file: %s" % save_path)
+
 
     def get_mixture_coef(self, output):
 
