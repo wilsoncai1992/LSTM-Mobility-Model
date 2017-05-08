@@ -19,13 +19,13 @@ model_name = 'my_lstm_model'
 # input_length = 5
 input_length = 50
 n_lstm_units = 32
-# n_lstm_units = 256
+# n_lstm_units = 128
 n_layers = 1
 # pred_x_dim = 4
 # obs_x_dim = 5
 pred_x_dim = 4
-obs_x_dim = 5; use_feature = False # for label only
-# obs_x_dim = 4 + 64; use_feature = True # for all features
+# obs_x_dim = 5; use_feature = False # for label only
+obs_x_dim = 4 + 64; use_feature = True # for all features
 # n_mixtures = 3
 n_mixtures = 7
 dropout_prob = 0.1
@@ -55,15 +55,15 @@ with tf.device('/gpu:0'):
 # =======================================================================================
 import pandas as pd
 
-# data with label
-Label = pd.read_csv('../data_new/Traj_Label_Data2.csv', index_col=[0]).reset_index()
-colnames = ['Idx','TrueLabel','PredLabel1','PredLabel2','PredLabel3'] + ['Feature' + str(i) for i in range(1,65)]
-Feature = pd.read_csv('../data_cnnout/PredictedLabelFeature.csv', names=colnames)
-New_Label = Label.merge(Feature, left_on='index', right_on='Idx', how='left')
-FID_with_missing_data = New_Label.loc[New_Label['PredLabel1'].index[New_Label['PredLabel1'].apply(np.isnan)]].FID.unique()
-data_raw_withfeature = New_Label[~New_Label.FID.isin(FID_with_missing_data)]
+# data with feature
+# Label = pd.read_csv('../data_new/Traj_Label_Data2.csv', index_col=[0]).reset_index()
+# colnames = ['Idx','TrueLabel','PredLabel1','PredLabel2','PredLabel3'] + ['Feature' + str(i) for i in range(1,65)]
+# Feature = pd.read_csv('../data_cnnout/PredictedLabelFeature.csv', names=colnames)
+# New_Label = Label.merge(Feature, left_on='index', right_on='Idx', how='left')
+# FID_with_missing_data = New_Label.loc[New_Label['PredLabel1'].index[New_Label['PredLabel1'].apply(np.isnan)]].FID.unique()
+# data_raw_withfeature = New_Label[~New_Label.FID.isin(FID_with_missing_data)]
 
-data_raw = data_raw_withfeature
+# data_raw = data_raw_withfeature
 
 # data with true label
 Label = pd.read_csv('../data_new/Traj_Label_Data2.csv', index_col=[0]).reset_index()
@@ -150,27 +150,29 @@ contextual_variables1 = np.tile(contextual_variables1, (n_subj, 1, 1))
 #
 # use true label
 # ---------------------------------------------------------------------------------------
-# label_list = data_raw[['NewLabel']].as_matrix()
-# label_list = np.reshape(label_list, [n_subj, 50])
-# label_list = label_list[:, :, np.newaxis]
-# label_list.shape
+# if not use_feature:
+#   label_list = data_raw[['NewLabel']].as_matrix()
+#   label_list = np.reshape(label_list, [n_subj, 50])
+#   label_list = label_list[:, :, np.newaxis]
+#   label_list.shape
 
-# contextual_variables1 = np.concatenate((contextual_variables1, label_list), axis = 2)
+#   contextual_variables1 = np.concatenate((contextual_variables1, label_list), axis = 2)
 #
 # use CNN feature
 # ---------------------------------------------------------------------------------------
-# feature_list = data_raw_withfeature.as_matrix()[:,14:]
-# feature_list = np.reshape(feature_list, [n_subj, 50, 64])
+if use_feature:
+  feature_list = data_raw_withfeature.as_matrix()[:,14:]
+  feature_list = np.reshape(feature_list, [n_subj, 50, 64])
 
-# contextual_variables1 = np.concatenate((contextual_variables1, feature_list), axis = 2)
+  contextual_variables1 = np.concatenate((contextual_variables1, feature_list), axis = 2)
 #
 # use predicted label
 # ---------------------------------------------------------------------------------------
-feature_list = data_raw_withfeature.as_matrix()[:,10]
-feature_list = np.reshape(feature_list, [n_subj, 50, 1])
+# if not use_feature:
+#   feature_list = data_raw_withfeature.as_matrix()[:,10]
+#   feature_list = np.reshape(feature_list, [n_subj, 50, 1])
 
-contextual_variables1 = np.concatenate((contextual_variables1, feature_list), axis = 2)
-contextual_variables1.shape
+#   contextual_variables1 = np.concatenate((contextual_variables1, feature_list), axis = 2)
 
 # Initilization for LSTM model
 X_init = np.zeros((1, pred_x_dim))
@@ -483,7 +485,7 @@ plt.savefig('5.png')
 #
 # mean path for single person
 # ---------------------------------------------------------------------------------------
-i = 250
+i = 500
 
 contextual_variables2 = contextual_variables1[i,:,:][np.newaxis,:,:]
 contextual_variables2 = np.repeat(contextual_variables2, n_subj, axis = 0)
@@ -496,7 +498,7 @@ gen_mixture_coef = lstm_DM.generate_sequence_coefficients(sess=sess,
                                                           X_init=X_init,
                                                           X_input_seq=contextual_variables2,
                                                           start_time_list=start_time_list1[:,0,:]/24.,
-                                                          n=1000)
+                                                          n=200)
 
 gen_seq[:, :, 0] *= lat_max
 gen_seq[:, :, 1] *= lon_max
@@ -530,6 +532,86 @@ plt.plot(gen_colmedian[:,1], gen_colmedian[:,0], 'b-o', alpha =0.3)
 
 # red center is truth coordinate
 plt.plot(activity_information1[i][:,1], activity_information1[i][:,0], 'ro', lw=3)
+
+
+plt.xlabel('Longitude')
+plt.ylabel('Latitude')
+
+plt.savefig('7.png')
+
+#
+# predict for test data
+# ---------------------------------------------------------------------------------------
+
+Label2 = pd.read_csv('../data_test/PredFeatureTest_test.csv', index_col=[0]).reset_index()
+Label2.groupby('FID').count()
+
+all_pred_label = Label2[['PredLabel1']]
+all_pred_label = np.reshape(all_pred_label.values, (len(all_pred_label)/50,50))
+all_pred_label = all_pred_label[:,:,np.newaxis]
+
+contextual_variables3 = contextual_variables1[i,:,:][np.newaxis,:,:]
+contextual_variables3 = contextual_variables3[:,:,0:4]
+contextual_variables3 = np.tile(contextual_variables3, (33, 1, 1))
+
+contextual_variables3 = np.concatenate((contextual_variables3, all_pred_label), axis=2)
+
+# data_raw.columns
+# data_raw[['PredLabel1']]
+
+i = 18
+
+contextual_variables4 = contextual_variables3[i,:,:][np.newaxis,:,:]
+contextual_variables4 = np.repeat(contextual_variables4, n_subj, axis = 0)
+contextual_variables4.shape
+
+gen_seq, \
+gen_coef, \
+gen_states, \
+gen_mixture_coef = lstm_DM.generate_sequence_coefficients(sess=sess,
+                                                          X_init=X_init,
+                                                          X_input_seq=contextual_variables4,
+                                                          start_time_list=start_time_list1[:,0,:]/24.,
+                                                          n=200)
+
+gen_seq[:, :, 0] *= lat_max
+gen_seq[:, :, 1] *= lon_max
+gen_seq[:, :, 0] += lat_mean
+gen_seq[:, :, 1] += lon_mean
+gen_seq[:, :, 2] *= 24
+gen_seq[:, :, 3] *= 24
+
+gen_colmean = gen_seq.mean(axis=0)
+
+# plot mean path
+plt.figure()
+
+plt.plot(gen_colmean[:,1], gen_colmean[:,0], 'b-o', alpha =0.3)
+
+# red center is truth coordinate
+uniq_FID = np.unique(Label2[['FID']].values)
+
+my_lonlat = Label[Label.FID ==  uniq_FID[i]][['Lon', 'Lat']].values
+# my_lonlat = Label2[Label2.FID == uniq_FID[i]][['Lon', 'Lat']].values
+plt.plot(my_lonlat[:,1], my_lonlat[:,0], 'ro', lw=3)
+
+plt.xlabel('Longitude')
+plt.ylabel('Latitude')
+
+plt.savefig('6.png')
+
+
+gen_colmedian = np.median(gen_seq, axis=0)
+
+# plot mean path
+plt.figure()
+
+plt.plot(gen_colmedian[:,1], gen_colmedian[:,0], 'b-o', alpha =0.3)
+
+# red center is truth coordinate
+my_lonlat = Label[Label.FID ==  uniq_FID[i]][['Lon', 'Lat']].values
+# my_lonlat = Label2[Label2.FID == uniq_FID[i]][['Lon', 'Lat']].values
+plt.plot(my_lonlat[:,1], my_lonlat[:,0], 'ro', lw=3)
 
 
 plt.xlabel('Longitude')
